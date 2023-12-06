@@ -9,9 +9,15 @@ import ZakkroMacros
 let testMacros: [String: Macro.Type] = [
     "stringify": StringifyMacro.self,
 ]
+
 let slopeMacros: [String: Macro.Type] = [
     "SlopeSubset": SlopeSubsetMacro.self,
 ]
+
+let urlMacros: [String: Macro.Type] = [
+    "URL": URLMacro.self // #URL should use URLMacro
+]
+
 
 #endif
 
@@ -114,6 +120,19 @@ final class ZakkroTests: XCTestCase {
                 DiagnosticSpec(message: "@SlopeSubset can only be applied to an enum", line: 1, column: 1)
             ],
             macros: slopeMacros
+        )
+    }
+    
+    
+    func testValidURL() {
+        assertMacroExpansion(
+            #"""
+            #URL("https://www.avanderlee.com")
+            """#,
+            expandedSource: #"""
+            URL(string: "https://www.avanderlee.com")!
+            """#,
+            macros: urlMacros
         )
     }
 }

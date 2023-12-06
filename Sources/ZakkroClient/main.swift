@@ -1,6 +1,8 @@
 import os
 import Zakkro
 import Foundation
+
+
 let logger = os.Logger(subsystem: "com.vaporwarewolf", category: "ZakkroClient")
 
 let a = 17
@@ -36,6 +38,8 @@ enum EasySlope {
     case beginnersParadise
     case practiceRun
 }
+
+let invalidURL = #URL("https://invalid")
 
 
 print("hi from Zakkro")
