@@ -9,6 +9,10 @@ import ZakkroMacros
 let testMacros: [String: Macro.Type] = [
     "stringify": StringifyMacro.self,
 ]
+let slopeMacros: [String: Macro.Type] = [
+    "SlopeSubset": SlopeSubsetMacro.self,
+]
+
 #endif
 
 final class ZakkroTests: XCTestCase {
@@ -43,4 +47,78 @@ final class ZakkroTests: XCTestCase {
         throw XCTSkip("macros are only supported when running tests for the host platform")
         #endif
     }
+    
+    func testMacroWithSlopeSubset() throws {
+        #if canImport(ZakkroMacros)
+        assertMacroExpansion(
+            #"""
+            @SlopeSubset
+            enum EasySlope {
+                case beginnersParadise
+                case practiceRun
+            }
+            """#,
+            expandedSource: 
+            #"""
+            enum EasySlope {
+                case beginnersParadise
+                case practiceRun
+            
+                init?(_ slope: Slope) {
+                    switch slope {
+                    case .beginnersParadise:
+                        self = .beginnersParadise
+                    case .practiceRun:
+                        self = .practiceRun
+                    default:
+                        return nil
+                    }
+                }
+            }
+            """#,
+            macros: slopeMacros
+        )
+        #else
+        throw XCTSkip("macros are only supported when running tests for the host platform")
+        #endif
+    }
+//    func testMacroWithDictionaryStorage() throws {
+//        #if canImport(ZakkroMacros)
+//        assertMacroExpansion(
+//            #"""
+//            #stringify("Hello, \(name)")
+//            """#,
+//            expandedSource: #"""
+//            ("Hello, \(name)", #""Hello, \(name)""#)
+//            """#,
+//            macros: testMacros
+//        )
+//        #else
+//        throw XCTSkip("macros are only supported when running tests for the host platform")
+//        #endif
+//    }
+
+    func testSlopeSubsetOnStruct() throws {
+        assertMacroExpansion(
+            """
+            @SlopeSubset
+            struct Skier {
+            }
+            """,
+            expandedSource:
+            """
+            struct Skier {
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(message: "@SlopeSubset can only be applied to an enum", line: 1, column: 1)
+            ],
+            macros: slopeMacros
+        )
+    }
 }
+
+
+
+
+
