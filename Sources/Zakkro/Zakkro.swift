@@ -47,6 +47,13 @@ public macro URL(_ stringLiteral: String) -> URL = #externalMacro(
 )
 
 
+@attached(peer, names: overloaded)
+public macro AddAsync() = #externalMacro(
+    module: "ZakkroMacros",
+    type: "AddAsyncMacro"
+)
+
+
 
 ////@freestanding(expression)
 ////public ma ro dictionaryStorage<T>(_ value: T) -> (T, String) = #externalMacro(module: "ZakkroMacros", type: "DictionaryStorageMacro")

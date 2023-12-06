@@ -18,6 +18,10 @@ let urlMacros: [String: Macro.Type] = [
     "URL": URLMacro.self // #URL should use URLMacro
 ]
 
+let asyncMacros: [String: Macro.Type] = [
+    "AddAsync": AddAsyncMacro.self,
+]
+
 
 #endif
 
@@ -133,6 +137,30 @@ final class ZakkroTests: XCTestCase {
             URL(string: "https://www.avanderlee.com")!
             """#,
             macros: urlMacros
+        )
+    }
+    
+    func testAddAsync() {
+        assertMacroExpansion(
+            """
+            @AddAsync
+            func test(arg1: String, completion: (String?) -> Void) {
+            }
+            """,
+            expandedSource: """
+            
+            func test(arg1: String, completion: (String?) -> Void) {
+            }
+            
+            func test(arg1: String) async -> String? {
+                await withCheckedContinuation { continuation in
+                    self.test(arg1: arg1) { object in
+                        continuation.resume(returning: object)
+                    }
+                }
+            }
+            """,
+            macros: asyncMacros
         )
     }
 }

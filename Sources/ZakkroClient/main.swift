@@ -25,6 +25,7 @@ print("The value \(result) was produced by the code \"\(code)\"")
 //    let male: String
 //    let female: String
 //}
+
 enum Slope {
     case beginnersParadise
     case practiceRun
@@ -40,6 +41,22 @@ enum EasySlope {
 }
 
 let invalidURL = #URL("https://invalid")
+
+
+struct AsyncFunctions {
+  @AddAsync
+  func test(arg1: String, completion: (String) -> Void) {
+  }
+}
+ 
+func testing() async {
+    let result = await AsyncFunctions().test(arg1: "Blob")
+}
+
+Task {
+    await testing()
+}
+
 
 
 print("hi from Zakkro")

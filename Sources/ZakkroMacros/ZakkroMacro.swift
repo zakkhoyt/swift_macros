@@ -21,7 +21,7 @@ public struct StringifyMacro: ExpressionMacro {
         guard let argument = node.argumentList.first?.expression else {
             fatalError("compiler bug: the macro does not have any arguments")
         }
-
+        
         return "(\(argument), \(literal: argument.description))"
     }
 }
@@ -45,8 +45,8 @@ public struct SlopeSubsetMacro: MemberMacro {
     ) throws -> [SwiftSyntax.DeclSyntax] {
         
         guard let enumDecl = declaration.as(EnumDeclSyntax.self) else {
-//            // TODO: Diagnose
-//            return []
+            //            // TODO: Diagnose
+            //            return []
             throw SlopSubsetError.onlyApplicableToEnum
         }
         
@@ -58,11 +58,11 @@ public struct SlopeSubsetMacro: MemberMacro {
             "init?(_ slope: Slope)"
         ) {
             try SwitchExprSyntax(
-            "switch slope"
+                "switch slope"
             ) {
                 for element in elements {
                     SwitchCaseSyntax(
-                        stringLiteral: 
+                        stringLiteral:
                         #"""
                         case .\#(element.name):
                             self = .\#(element.name)
@@ -70,7 +70,7 @@ public struct SlopeSubsetMacro: MemberMacro {
                     )
                 }
                 SwitchCaseSyntax(
-                    stringLiteral: 
+                    stringLiteral:
                     #"""
                     default:
                         return nil
@@ -79,19 +79,19 @@ public struct SlopeSubsetMacro: MemberMacro {
             }
         }
         
-//        let compProp = try VariableDeclSyntax("") {
-//
-//        }
-//        let c = try VariableDeclSyntax("") {
-//            StmtSyntax(
-//                stringLiteral:
-//            """
-//            var i: Int {
-//                0
-//            }
-//            """
-//            )
-//        }
+        //        let compProp = try VariableDeclSyntax("") {
+        //
+        //        }
+        //        let c = try VariableDeclSyntax("") {
+        //            StmtSyntax(
+        //                stringLiteral:
+        //            """
+        //            var i: Int {
+        //                0
+        //            }
+        //            """
+        //            )
+        //        }
         
         return [DeclSyntax(initializer)]
     }
@@ -102,7 +102,7 @@ public struct URLMacro: ExpressionMacro {
     enum URLMacroError: Error, CustomStringConvertible {
         case requiresStaticStringLiteral
         case malformedURL(urlString: String)
-
+        
         var description: String {
             switch self {
             case .requiresStaticStringLiteral:
@@ -117,8 +117,8 @@ public struct URLMacro: ExpressionMacro {
         of node: some FreestandingMacroExpansionSyntax,
         in context: some MacroExpansionContext
     ) throws -> ExprSyntax {
-//        print(node.argumentList.map { $0.expression })
-//        return "URL(string: \"https://www.avanderlee.com\")!"
+        //        print(node.argumentList.map { $0.expression })
+        //        return "URL(string: \"https://www.avanderlee.com\")!"
         
         guard
             /// 1. Grab the first (and only) Macro argument.
@@ -131,16 +131,86 @@ public struct URLMacro: ExpressionMacro {
         else {
             throw URLMacroError.requiresStaticStringLiteral
         }
-
+        
         /// 4. Validate whether the String literal matches a valid URL structure.
         guard let _ = URL(string: literalSegment.content.text) else {
             throw URLMacroError.malformedURL(urlString: "\(argument)")
         }
-
+        
         return "URL(string: \(argument))!"
     }
 }
 
+
+enum AsyncError: Error, CustomStringConvertible {
+    
+    case onlyFunction
+    
+    var description: String {
+        switch self {
+        case .onlyFunction:
+            return "@AddAsync can be attached only to functions."
+        }
+    }
+}
+
+public struct AddAsyncMacro: PeerMacro {
+    public static func expansion(
+        of node: AttributeSyntax,
+        providingPeersOf declaration: some DeclSyntaxProtocol,
+        in context: some MacroExpansionContext
+    ) throws -> [DeclSyntax] {
+        //       guard let functionDecl = declaration.as(FunctionDeclSyntax.self) else {
+        //          // TODO: Throw error
+        //           return []
+        //       }
+        //
+        //       return []
+        
+        // Inside expansion method.
+        guard let functionDecl = declaration.as(FunctionDeclSyntax.self) else {
+            throw AsyncError.onlyFunction // <- Error thrown here
+        }
+        
+        let signature = functionDecl.signature.as(FunctionSignatureSyntax.self)
+        let parameters = signature?.parameterClause.parameters
+        let firstParameter = parameters?.first
+        let parameterName = firstParameter?.firstName // -> arg1
+        
+        if let signature = functionDecl.signature.as(FunctionSignatureSyntax.self) {
+            let parameters = signature.parameterClause.parameters
+            
+            // 1.
+            if let completion = parameters.last,
+               let completionType = completion.type.as(FunctionTypeSyntax.self)?.parameters.first,
+               let remainPara = FunctionParameterListSyntax(parameters.removingLast()) {
+                
+                // 2. returns "arg1: String"
+                let functionArgs = remainPara.map { parameter -> String in
+                    guard let paraType = parameter.type.as(IdentifierTypeSyntax.self)?.name else { return "" }
+                    return "\(parameter.firstName): \(paraType)"
+                }.joined(separator: ", ")
+                
+                // 3. returns "arg1: arg1"
+                let calledArgs = remainPara.map { "\($0.firstName): \($0.firstName)" }.joined(separator: ", ")
+                
+                // 4.
+                return [
+                    """
+                    func \(functionDecl.name)(\(raw: functionArgs)) async -> \(completionType) {
+                        await withCheckedContinuation { continuation in
+                            self.\(functionDecl.name)(\(raw: calledArgs)) { object in
+                                continuation.resume(returning: object)
+                            }
+                        }
+                    }
+                    """
+                ]
+            }
+        }
+        return []
+    }
+}
 
 
 //public struct DictionaryStorageMacro: MemberMacro {
@@ -161,6 +231,7 @@ struct ZakkroPlugin: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
         StringifyMacro.self,
         SlopeSubsetMacro.self,
-        URLMacro.self
+        URLMacro.self,
+        AddAsyncMacro.self
     ]
 }
