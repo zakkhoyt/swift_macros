@@ -58,5 +58,30 @@ Task {
 }
 
 
+let s = "myText"
+logger.debug("\(s)")
+
+//let l = #logify("myString")
+//
+
+@DebugLogger
+class Foo {
+}
+
+let line = "\(#line) \(#filePath)"
+
+
+
+
+func l() {
+    print("l() called")
+}
+
+func test() {
+    let i = 33
+    #dlogify(i)
+}
+
+test()
 
 print("hi from Zakkro")

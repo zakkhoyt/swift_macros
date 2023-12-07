@@ -4,6 +4,20 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
 
+@main
+struct ZakkroPlugin: CompilerPlugin {
+    let providingMacros: [Macro.Type] = [
+        StringifyMacro.self,
+        SlopeSubsetMacro.self,
+        URLMacro.self,
+        AddAsyncMacro.self,
+        LogifyMacro.self,
+        DebugLoggerMacro.self,
+        DLogifyMacro.self
+    ]
+}
+
+
 /// Implementation of the `stringify` macro, which takes an expression
 /// of any type and produces a tuple containing the value of that expression
 /// and the source code that produced the value. For example
@@ -25,6 +39,74 @@ public struct StringifyMacro: ExpressionMacro {
         return "(\(argument), \(literal: argument.description))"
     }
 }
+
+public struct LogifyMacro: ExpressionMacro {
+    public static func expansion(
+        of node: some FreestandingMacroExpansionSyntax,
+        in context: some MacroExpansionContext
+    ) -> ExprSyntax {
+        guard let argument = node.argumentList.first?.expression else {
+            fatalError("compiler bug: the macro does not have any arguments")
+        }
+        
+//        let s = "\"test"
+        let logline = "logger.debug(\(argument))"
+        
+        return "\\\"\(raw: logline)\\\""
+//        return #"logger.debug("\(\#(argument))")"#
+//        return #"logger.debug("\(\#(literal: argument.description))")"#
+    }
+}
+
+public struct DLogifyMacro: DeclarationMacro {
+    public static func expansion(
+        of node: some SwiftSyntax.FreestandingMacroExpansionSyntax,
+        in context: some SwiftSyntaxMacros.MacroExpansionContext
+    ) throws -> [SwiftSyntax.DeclSyntax] {
+        guard let argument = node.argumentList.first?.expression else {
+            fatalError("compiler bug: the macro does not have any arguments")
+        }
+        
+//        let s = "\"test"
+//        let logline = "logger.debug(\(argument))"
+//        
+        return [
+            DeclSyntax(
+                stringLiteral: 
+//                """
+//                l()
+//                """
+                """
+                logger.debug("testing macro: \\(\(argument))")
+                """
+
+            )
+        ]
+//        return []
+        
+//        return "\\\"\(raw: logline)\\\""
+//        return #"logger.debug("\(\#(argument))")"#
+//        return #"logger.debug("\(\#(literal: argument.description))")"#
+
+    }
+    
+    public static func expansion(
+        of node: some FreestandingMacroExpansionSyntax,
+        in context: some MacroExpansionContext
+    ) -> ExprSyntax {
+        guard let argument = node.argumentList.first?.expression else {
+            fatalError("compiler bug: the macro does not have any arguments")
+        }
+        
+//        let s = "\"test"
+        let logline = "logger.debug(\(argument))"
+        
+        return "\\\"\(raw: logline)\\\""
+//        return #"logger.debug("\(\#(argument))")"#
+//        return #"logger.debug("\(\#(literal: argument.description))")"#
+    }
+}
+
 
 
 enum SlopSubsetError: CustomStringConvertible, Error {
@@ -213,6 +295,7 @@ public struct AddAsyncMacro: PeerMacro {
 }
 
 
+
 //public struct DictionaryStorageMacro: MemberMacro {
 //    public static func expansion(
 //        of attribute: AttributeSyntax,
@@ -226,12 +309,62 @@ public struct AddAsyncMacro: PeerMacro {
 //    }
 //}
 
-@main
-struct ZakkroPlugin: CompilerPlugin {
-    let providingMacros: [Macro.Type] = [
-        StringifyMacro.self,
-        SlopeSubsetMacro.self,
-        URLMacro.self,
-        AddAsyncMacro.self
-    ]
+
+enum DebugLoggerError: CustomStringConvertible, Error {
+    case notCorrectType
+
+    var description: String {
+        switch self {
+        case .notCorrectType: return "@DebugLogger can only be applied to a class & struct"
+        }
+    }
+}
+
+/// Implementation of the `DebugLogger` macro, which takes a string
+/// and prints the class and issue only during debugging. For example
+///
+///     @DebugLogger
+///     class Foo {
+///         func failure() {
+///             ....
+///             log(issue: "failed")
+///         }
+///     }
+///
+///  Will print out - "In Foo - failed"
+public struct DebugLoggerMacro: MemberMacro {
+    public static func expansion(
+        of node: AttributeSyntax,
+        providingMembersOf declaration: some DeclGroupSyntax,
+        in context: some MacroExpansionContext
+    ) throws -> [SwiftSyntax.DeclSyntax] {
+        // TODO: add type check for other DeclSyntax
+        let identifier: TokenSyntax
+        if let classDecl = declaration.as(ClassDeclSyntax.self) {
+            identifier = classDecl.name
+        } else if let structDecl = declaration.as(StructDeclSyntax.self) {
+            identifier = structDecl.name
+        } else {
+            throw DebugLoggerError.notCorrectType
+        }
+
+        // We could make issue generic but for now let's leave it as a string parameter
+        let printFunc = try FunctionDeclSyntax("func log(issue: String)") {
+            StmtSyntax(
+                """
+                
+                    #if DEBUG
+                    print(\"In \(raw: identifier.text) - \\(issue)\")
+                    #endif
+                """
+            )
+        }
+        
+        let s = try StmtSyntax(stringLiteral: "let i = 0")
+
+        return [
+            DeclSyntax(printFunc)
+//            DeclSyntax(s)
+        ]
+    }
 }

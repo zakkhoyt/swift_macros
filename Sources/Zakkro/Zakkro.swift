@@ -16,6 +16,24 @@ public macro stringify<T>(_ value: T) -> (T, String) = #externalMacro(
 )
 
 
+@freestanding(expression)
+public macro logify<T>(
+    _ value: T
+) -> String = #externalMacro(
+    module: "ZakkroMacros",
+    type: "LogifyMacro"
+)
+
+@freestanding(declaration, names: named(l))
+public macro dlogify<T>(
+    _ value: T
+) = #externalMacro(
+    module: "ZakkroMacros",
+    type: "DLogifyMacro"
+)
+
+
+
 /// Defines a subset of the 'Slope enum
 ///
 /// Generates an initializer that converts a 'Slope' to this type if the slope is
@@ -65,3 +83,26 @@ public macro AddAsync() = #externalMacro(
 //
 //
 
+
+
+/// A macro that generates a logger function to let the
+/// object log the issue within but only during debuging. For example,
+///
+///     @DebugLogger
+///     class Foo {}
+///
+/// `produces a function`
+///     func log(issue: String) {
+///         #if DEBUG
+///         print("In Foo - \(issue)")
+///         #endif
+///     }
+/// **SeeAlso:**
+///
+/// [Article](https://betterprogramming.pub/swift-macros-4f32e33ccf19)
+///
+@attached(member, names: named(log(issue:)))
+public macro DebugLogger() = #externalMacro(
+    module: "ZakkroMacros",
+    type: "DebugLoggerMacro"
+)

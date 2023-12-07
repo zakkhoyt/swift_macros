@@ -22,12 +22,17 @@ let asyncMacros: [String: Macro.Type] = [
     "AddAsync": AddAsyncMacro.self,
 ]
 
+let logMacros: [String: Macro.Type] = [
+    "logify": LogifyMacro.self,
+]
+
+
 
 #endif
 
 final class ZakkroTests: XCTestCase {
     func testMacro() throws {
-        #if canImport(ZakkroMacros)
+#if canImport(ZakkroMacros)
         assertMacroExpansion(
             """
             #stringify(a + b)
@@ -37,13 +42,13 @@ final class ZakkroTests: XCTestCase {
             """,
             macros: testMacros
         )
-        #else
+#else
         throw XCTSkip("macros are only supported when running tests for the host platform")
-        #endif
+#endif
     }
-
+    
     func testMacroWithStringLiteral() throws {
-        #if canImport(ZakkroMacros)
+#if canImport(ZakkroMacros)
         assertMacroExpansion(
             #"""
             #stringify("Hello, \(name)")
@@ -53,13 +58,13 @@ final class ZakkroTests: XCTestCase {
             """#,
             macros: testMacros
         )
-        #else
+#else
         throw XCTSkip("macros are only supported when running tests for the host platform")
-        #endif
+#endif
     }
     
     func testMacroWithSlopeSubset() throws {
-        #if canImport(ZakkroMacros)
+#if canImport(ZakkroMacros)
         assertMacroExpansion(
             #"""
             @SlopeSubset
@@ -68,7 +73,7 @@ final class ZakkroTests: XCTestCase {
                 case practiceRun
             }
             """#,
-            expandedSource: 
+            expandedSource:
             #"""
             enum EasySlope {
                 case beginnersParadise
@@ -88,26 +93,26 @@ final class ZakkroTests: XCTestCase {
             """#,
             macros: slopeMacros
         )
-        #else
+#else
         throw XCTSkip("macros are only supported when running tests for the host platform")
-        #endif
+#endif
     }
-//    func testMacroWithDictionaryStorage() throws {
-//        #if canImport(ZakkroMacros)
-//        assertMacroExpansion(
-//            #"""
-//            #stringify("Hello, \(name)")
-//            """#,
-//            expandedSource: #"""
-//            ("Hello, \(name)", #""Hello, \(name)""#)
-//            """#,
-//            macros: testMacros
-//        )
-//        #else
-//        throw XCTSkip("macros are only supported when running tests for the host platform")
-//        #endif
-//    }
-
+    //    func testMacroWithDictionaryStorage() throws {
+    //        #if canImport(ZakkroMacros)
+    //        assertMacroExpansion(
+    //            #"""
+    //            #stringify("Hello, \(name)")
+    //            """#,
+    //            expandedSource: #"""
+    //            ("Hello, \(name)", #""Hello, \(name)""#)
+    //            """#,
+    //            macros: testMacros
+    //        )
+    //        #else
+    //        throw XCTSkip("macros are only supported when running tests for the host platform")
+    //        #endif
+    //    }
+    
     func testSlopeSubsetOnStruct() throws {
         assertMacroExpansion(
             """
@@ -163,9 +168,50 @@ final class ZakkroTests: XCTestCase {
             macros: asyncMacros
         )
     }
+    
+    func testLogify() throws {
+#if canImport(ZakkroMacros)
+        assertMacroExpansion(
+            """
+            #logify(text)
+            """,
+            expandedSource: #"""
+            logger.debug("\(text)")
+            """#,
+            macros: logMacros
+        )
+#else
+        throw XCTSkip("macros are only supported when running tests for the host platform")
+#endif
+    }
+    
+    
 }
 
+let debugLogMacros: [String: Macro.Type] = [
+    "DebugLogger": DebugLoggerMacro.self,
+]
 
-
-
-
+final class DebugLoggerTests: XCTestCase {
+    func testMacro() {
+        assertMacroExpansion(
+            """
+            @DebugLogger
+            class Foo {
+            }
+            """,
+            expandedSource: 
+            """
+            class Foo {
+            
+                func log(issue: String) {
+                    #if DEBUG
+                    print("In Foo - \\(issue)")
+                    #endif
+                }
+            }
+            """,
+            macros: debugLogMacros
+        )
+    }
+}
