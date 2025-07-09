@@ -179,6 +179,105 @@ https://medium.com/@tahabebek/swift-macros-36417a8557a
 
 
 
+
+
+### HatchConcurrencyMacros (Zakkro)
+HatchTelemetryMacros
+
+```swift
+import Foundation
+
+@attached(peer, names: overloaded)
+public macro AddAsync(
+    
+) = #externalMacro(
+    module: "ZakkroMacros",
+    type: "AddAsyncMacro"
+)
+```
+
+### HatchConcurrencyMacrosImplementation (ZakkroMacros)
+
+```swift
+/// HatchConcurrencyMacros.swift
+
+import Foundation
+import SwiftCompilerPlugin
+import SwiftSyntax
+import SwiftSyntaxBuilder
+import SwiftSyntaxMacros
+
+@main
+struct HatchConcurrencyMacrosPlugin: CompilerPlugin {
+    let providingMacros: [Macro.Type] = [
+        AddAsyncMacro.self,
+    ]
+}
+
+
+public struct AddAsyncMacro: PeerMacro {
+    public static func expansion(
+        of node: AttributeSyntax,
+        providingPeersOf declaration: some DeclSyntaxProtocol,
+        in context: some MacroExpansionContext
+    ) throws -> [DeclSyntax] {
+        // Inside expansion method.
+        guard let functionDecl = declaration.as(FunctionDeclSyntax.self) else {
+            throw AsyncError.onlyFunction // <- Error thrown here
+        }
+        
+        let signature = functionDecl.signature.as(FunctionSignatureSyntax.self)
+        let parameters = signature?.parameterClause.parameters
+        let firstParameter = parameters?.first
+        // ...
+
+    }
+}
+```
+
+
+### HatchSomeClient (ZakkroConsumer)
+
+```swift
+import HatchConcurrencyMacros
+```
+
+
+Use the macro
+```swift
+@AddAsync
+func test(arg1: String, completion: (String?) -> Void) {
+  
+}
+```
+
+Macro Exapansion
+
+```swift
+func test(arg1: String, completion: (String?) -> Void) {
+  
+}
+
+func test(arg1: String) async -> String? {
+  await withCheckedContinuation { continuation in
+    self.test(arg1: arg1) { object in
+      continuation.resume(returning: object)
+    }
+  }
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
 ## AddAsync
 
 

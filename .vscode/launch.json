@@ -1,0 +1,22 @@
+{
+  "configurations": [
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:SwiftMacros}/01",
+      "name": "Debug ZakkroConsumer (01)",
+      "program": "${workspaceFolder:SwiftMacros}/01/.build/debug/ZakkroConsumer",
+      "preLaunchTask": "swift: Build Debug ZakkroConsumer (01)"
+    },
+    {
+      "type": "swift",
+      "request": "launch",
+      "args": [],
+      "cwd": "${workspaceFolder:SwiftMacros}/01",
+      "name": "Release ZakkroConsumer (01)",
+      "program": "${workspaceFolder:SwiftMacros}/01/.build/release/ZakkroConsumer",
+      "preLaunchTask": "swift: Build Release ZakkroConsumer (01)"
+    }
+  ]
+}
