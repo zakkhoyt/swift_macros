@@ -20,18 +20,21 @@ let package = Package(
             targets: ["Zakkro"]
         ),
         .executable(
-            name: "ZakkroClient",
-            targets: ["ZakkroClient"]
+            name: "ZakkroConsumer",
+            targets: ["ZakkroConsumer"]
         ),
     ],
     dependencies: [
         // Depend on the Swift 5.9 release of SwiftSyntax
-        .package(url: "https://github.com/apple/swift-syntax.git", from: "509.0.0"),
+        .package(
+            url: "https://github.com/apple/swift-syntax.git",
+            from: "509.0.0"
+        ),
     ],
     targets: [
-        // Targets are the basic building blocks of a package, defining a module or a test suite.
-        // Targets can depend on other targets in this package and products from dependencies.
-        // Macro implementation that performs the source transformation of a macro.
+        // MARK - Macro Targets
+        
+        // The Macro implementation that performs the source transformation
         .macro(
             name: "ZakkroMacros",
             dependencies: [
@@ -39,19 +42,30 @@ let package = Package(
                 .product(name: "SwiftCompilerPlugin", package: "swift-syntax")
             ]
         ),
-
-        // Library that exposes a macro as part of its API, which is used in client programs.
-        .target(name: "Zakkro", dependencies: ["ZakkroMacros"]),
-
-        // A client of the library, which is able to use the macro in its own code.
-        .executableTarget(name: "ZakkroClient", dependencies: ["Zakkro"]),
-
-        // A test target used to develop the macro implementation.
+        // Macro tests (used during macro development)
         .testTarget(
             name: "ZakkroTests",
             dependencies: [
                 "ZakkroMacros",
                 .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
+            ]
+        ),
+        // Exposes the macro via API (consumed by any code that depends on Zakkro)
+        // import Zakkro
+        .target(
+            name: "Zakkro",
+            dependencies: [
+                "ZakkroMacros"
+            ]
+        ),
+        
+        // MARK - Macro Consumer Targets
+
+        // A consumer of the macro library
+        .executableTarget(
+            name: "ZakkroConsumer",
+            dependencies: [
+                "Zakkro"
             ]
         ),
     ]

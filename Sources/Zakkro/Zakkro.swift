@@ -26,7 +26,8 @@ public macro logify<T>(
 
 @freestanding(declaration, names: named(l))
 public macro dlogify<T>(
-    _ value: T
+    _ value: T,
+    message: String? = nil
 ) = #externalMacro(
     module: "ZakkroMacros",
     type: "DLogifyMacro"

@@ -63,9 +63,32 @@ public struct DLogifyMacro: DeclarationMacro {
         of node: some SwiftSyntax.FreestandingMacroExpansionSyntax,
         in context: some SwiftSyntaxMacros.MacroExpansionContext
     ) throws -> [SwiftSyntax.DeclSyntax] {
+        
+        dump(node)
+        print(node.description)
+        let args = node.argumentList
+        print(args)
+        dump(args)
+        
+        if node.argumentList.count > 1 {
+            node.argumentList
+        }
+        if let a = node.argumentList as? [LabeledExprListSyntax] {
+            dump(a)
+           print(a)
+        }
+        if let args = node.argumentList.as(LabeledExprListSyntax.self) {
+             dump(args)
+            print(args)
+        }
+        
         guard let argument = node.argumentList.first?.expression else {
             fatalError("compiler bug: the macro does not have any arguments")
         }
+        
+//        if args.count >= 1 {
+//            if args[1].label == "message"
+//        }
         
 //        let s = "\"test"
 //        let logline = "logger.debug(\(argument))"

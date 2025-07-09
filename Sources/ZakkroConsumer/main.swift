@@ -3,7 +3,7 @@ import Zakkro
 import Foundation
 
 
-let logger = os.Logger(subsystem: "com.vaporwarewolf", category: "ZakkroClient")
+let logger = os.Logger(subsystem: "com.vaporwarewolf", category: "ZakkroConsumer")
 
 let a = 17
 let b = 25

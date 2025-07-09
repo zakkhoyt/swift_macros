@@ -24,6 +24,7 @@ let asyncMacros: [String: Macro.Type] = [
 
 let logMacros: [String: Macro.Type] = [
     "logify": LogifyMacro.self,
+    "dlogify": DLogifyMacro.self
 ]
 
 
@@ -184,6 +185,23 @@ final class ZakkroTests: XCTestCase {
         throw XCTSkip("macros are only supported when running tests for the host platform")
 #endif
     }
+    
+    func testDLogify() throws {
+#if canImport(ZakkroMacros)
+        assertMacroExpansion(
+            """
+            #dlogify(text, message: "myMessage")
+            """,
+            expandedSource: #"""
+            logger.debug("\(text)")
+            """#,
+            macros: logMacros
+        )
+#else
+        throw XCTSkip("macros are only supported when running tests for the host platform")
+#endif
+    }
+
     
     
 }
